@@ -23,6 +23,7 @@ CARLANE2 = 10
 CARLANE3 = 9
 TRUCKLANE = 8
 PAVEMENTLANE2 = 7
+TURTLELANE1 = 6
 
 
 # initialise variables
@@ -71,9 +72,6 @@ class MovingObject(object):
 
         self.speed = speed
 
-
-
-
     def move(self):
         self.rect.x = self.rect.x + self.speed
         if self.rect.right < 0:
@@ -82,6 +80,40 @@ class MovingObject(object):
             self.rect.x = 0
 
         game_screen.blit(self.image, [self.rect.x, self.rect.y])
+
+class Digger(MovingObject):
+    def __init__(self, start_x):
+        location = [start_x, DIGGERLANE]
+        MovingObject.__init__(self, 2, location, "digger.png")
+
+class Truck(MovingObject):
+    def __init__(self, start_x):
+        location = [start_x, TRUCKLANE]
+        MovingObject.__init__(self, -3, location, "truck.png")
+
+
+class Turtle(MovingObject):
+    def __init__(self, size, location):
+        self.size = size
+        MovingObject.__init__(self, -3, location, "turtle.png")
+
+
+class Car(MovingObject):
+    def __init__(self, start_x, car_type):
+        if car_type == "Red":
+            MovingObject.__init__(self, -2, [start_x, CARLANE1], "car_a.png")
+        elif car_type == "Purple":
+            MovingObject.__init__(self, -3, [start_x, CARLANE2], "car_b.png")
+        else:
+            MovingObject.__init__(self, -2, [start_x, CARLANE3], "car_c.png")
+
+
+
+
+
+
+
+
 
 class Pavement(object):
     def __init__(self, location):
@@ -116,24 +148,26 @@ def main():
         pavement_blocks.append(pavement_block)
 
 
-    car_a1 = MovingObject(-4, [4, CARLANE1], "car_a.png")
-    car_a2 = MovingObject(-4, [9, CARLANE1], "car_a.png")
-    car_a3 = MovingObject(-4, [14, CARLANE1], "car_a.png")
+    car_a1 = Car(4, "Red")
+    car_a2 = Car(9, "Red")
+    car_a3 = Car(14, "Red")
 
-    digger_1 = MovingObject(4, [6, DIGGERLANE], "digger.png")
-    digger_2 = MovingObject(4, [11, DIGGERLANE], "digger.png")
-    digger_3 = MovingObject(4, [16, DIGGERLANE], "digger.png")
+    digger_1 = Digger(6)
+    digger_2 = Digger(11)
+    digger_3 = Digger(16)
 
-    car_b1 = MovingObject(-6, [2, CARLANE2], "car_b.png")
-    car_b2 = MovingObject(-6, [7, CARLANE2], "car_b.png")
-    car_b3 = MovingObject(-6, [12, CARLANE2], "car_b.png")
+    car_b1 = Car(2, "Purple")
+    car_b2 = Car(7, "Purple")
+    car_b3 = Car(12, "Purple")
 
-    car_c1 = MovingObject(4, [3, CARLANE3], "car_c.png")
-    car_c2 = MovingObject(4, [8, CARLANE3], "car_c.png")
-    car_c3 = MovingObject(4, [13, CARLANE3], "car_c.png")
+    car_c1 = Car(3, "Pink")
+    car_c2 = Car(8, "Pink")
+    car_c3 = Car(13, "Pink")
 
-    truck_1 = MovingObject(-4, [3, TRUCKLANE], "truck.png")
-    truck_2 = MovingObject(-4, [9, TRUCKLANE], "truck.png")
+    truck_1 = Truck(3)
+    truck_2 = Truck(3)
+
+    turtle = Turtle(5, [6, TURTLELANE1])
 
 
 
@@ -181,6 +215,8 @@ def main():
 
         truck_1.move()
         truck_2.move()
+
+        turtle.move()
 
         pygame.display.update()
         clock.tick(30)
