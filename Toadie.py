@@ -9,15 +9,23 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 DARKBLUE = (0, 0, 121)
 PURPLE = (201, 128, 255)
+YELLOW = (255, 255, 0)
+GREEN = (33, 222, 0)
 
 
 # Define constants
 SCREENWIDTH = 448
 SCREENHEIGHT = 512
 
+TIMERPADRIGHT = 70
+TIMERPADBOTTOM = 16
+TIMERHEIGHT = 18
+TIMERUNIT = 300
+
+
 BLOCKSIZE = 32
 
-
+SCORELANE = 15
 LIVESLANE = 14
 PAVEMENTLANE1 = 13
 CARLANE1 = 12
@@ -35,7 +43,8 @@ HOMELANE = 1
 
 FROGSTARTX = 6
 FROGSTARTY = PAVEMENTLANE1
-FROGDEATHTIME = 2000
+FROGDEATHTIME = 2
+FROGTIME = 45
 
 
 # initialise variables
@@ -43,7 +52,6 @@ screen_blocks_wide = int(SCREENWIDTH / BLOCKSIZE)
 
 # Frog class
 class Frog(object):
-
     def __init__(self):
         self.image = pygame.image.load("frog.png")
         self.dead_image = pygame.image.load("dead_frog.png")
@@ -53,8 +61,13 @@ class Frog(object):
 
         self.rect.x = FROGSTARTX * BLOCKSIZE + self.padding_width
         self.rect.y = FROGSTARTY * BLOCKSIZE + self.padding_height
+
         self.lives = 3
+        self.points = 0
+        self.home_count = 0
         self.alive = True
+        self.death_pause_timer = 0
+        self.furthest_forward = self.rect.y
 
 
 
@@ -77,6 +90,10 @@ class Frog(object):
 
             elif direction == "U":
                 self.rect.y = self.rect.y - BLOCKSIZE
+                if self.rect.y < self.furthest_forward:
+                    self.furthest_forward = self.rect.y
+                    self.points = self.points + 10
+
 
             elif direction == "D":
                 if self.rect.y + 3 * BLOCKSIZE < SCREENHEIGHT:
@@ -106,7 +123,7 @@ class Frog(object):
             if floating_frog is True and self.rect.left <= 0:
                 self.die()
 
-    def check_home(self, home_pads):
+    def check_home(self, home_pads, game_timer):
         frog_top = self.calc_frog_top()
         if frog_top <= HOMELANE * BLOCKSIZE:
             found_home = False
@@ -115,8 +132,20 @@ class Frog(object):
                     if pad.occupied is False:
                         found_home = True
                         pad.occupied = True
+
+                        self.points = self.points + 50
+                        self.home_count = self.home_count + 1
+                        if self.home_count == 5:
+                            self.points = self.points + 1000
+
+                        secs_left = game_timer.get_seconds_left()
+                        self.points = self.points + 10 * secs_left
+
                         self.rect.x = FROGSTARTX * BLOCKSIZE + self.padding_width
                         self.rect.y = FROGSTARTY * BLOCKSIZE + self.padding_height
+
+                        self.furthest_forward = self.rect.y
+                        game_timer.reset()
                     else:
                         self.die()
 
@@ -132,14 +161,23 @@ class Frog(object):
             self.alive = False
             self.lives -= 1
             if self.lives > 0:
-                self.timer = pygame.time.get_ticks()
+                self.death_pause_timer = pygame.time.get_ticks()
 
-    def check_timer(self):
-        elapsed_time = pygame.time.get_ticks() - self.timer
-        if elapsed_time > FROGDEATHTIME:
+    def check_death_pause(self, game_timer):
+        elapsed_time = pygame.time.get_ticks() - self.death_pause_timer
+        if elapsed_time > FROGDEATHTIME * 1000:
             self.alive = True
             self.rect.x = FROGSTARTX * BLOCKSIZE + self.padding_width
             self.rect.y = FROGSTARTY * BLOCKSIZE + self.padding_height
+            self.furthest_forward = self.rect.y
+            game_timer.reset()
+
+
+    def collect_points(self):
+        collected_points = self.points
+        self.points = 0
+
+        return collected_points
 
     def calc_frog_top(self):
         return self.rect.y - self.padding_height
@@ -239,8 +277,33 @@ class Pad(object):
 
 
 
+class Timer(object):
+    def __init__(self, time_in_secs):
+        self.duration = time_in_secs * 1000
+        self.start_time = pygame.time.get_ticks()
+        self.time_remaining = self.duration
 
+    def update_time(self):
+        new_time = pygame.time.get_ticks()
+        elapsed_time = new_time - self.start_time
+        self.time_remaining = self.duration - elapsed_time
+        if self.time_remaining < 0:
+            self.time_remaining = 0
 
+    def out_of_time(self):
+        if self.time_remaining <= 0:
+            no_time_left = True
+        else:
+            no_time_left = False
+
+        return no_time_left
+
+    def get_seconds_left(self):
+        return int(self.time_remaining / 1000)
+
+    def reset(self):
+        self.start_time = pygame.time.get_ticks()
+        self.time_remaining = self.duration
 
 
 
@@ -249,6 +312,8 @@ def main():
 
     # Initialise objects
     frog = Frog()
+    score = 0
+    game_timer = Timer(FROGTIME)
 
     pavement_blocks = []
     for counter in range(screen_blocks_wide):
@@ -315,9 +380,6 @@ def main():
     log_c2 = Log(9, 2)
     log_c3 = Log(15, 2)
     river.extend((log_c1, log_c2, log_c3))
-
-
-
 
 
     while True:  # main game loop
@@ -399,33 +461,61 @@ def main():
 
         frog.check_collision(traffic)
         frog.check_water(river)
-        frog.check_home(landing_pads)
+        frog.check_home(landing_pads, game_timer)
 
-        display_scores(frog.lives)
+        game_timer.update_time()
+        display_scores(frog.lives, score, game_timer.time_remaining)
+
+        if game_timer.out_of_time() is True:
+            frog.die()
 
         if frog.alive is False and frog.lives > 0:
-            frog.check_timer()
+            frog.check_death_pause(game_timer)
 
         if frog.lives == 0:
             game_over()
+
+        if frog.home_count == 5:
+            game_over()
+
+        score = score + frog.collect_points()
+
+
 
         pygame.display.update()
         clock.tick(30)
 
 
-def display_scores(lives):
+def display_scores(lives, score, time):
     padding = (BLOCKSIZE - frog_lives_image.get_height()) / 2
     width = frog_lives_image.get_width()
     space = 4
     for life_number in range(lives):
         game_screen.blit(frog_lives_image, [life_number * (width + space) + padding, LIVESLANE * BLOCKSIZE + padding])
 
+    score_text = "SCORE   " + str(score)
+    text = score_font.render(score_text, True, (WHITE))
+    game_screen.blit(text, [padding, SCORELANE * BLOCKSIZE])
+
+    time_text = "TIME"
+    text = score_font.render(time_text, True, (YELLOW))
+    text_rect = text.get_rect()
+    game_screen.blit(text, [SCREENWIDTH - text_rect.width - padding, SCORELANE * BLOCKSIZE])
+
+    timer_width = int(time / TIMERUNIT)
+
+    if (timer_width > 0):
+        timer_rect = (SCREENWIDTH - TIMERPADRIGHT - timer_width, SCREENHEIGHT - TIMERPADBOTTOM - TIMERHEIGHT, timer_width,
+        TIMERHEIGHT)
+        pygame.draw.rect(game_screen, GREEN, timer_rect)
+
+
 
 def game_over():
-    text_line_1 = font.render("GAME OVER", True, (WHITE))
+    text_line_1 = large_font.render("GAME OVER", True, (WHITE))
     text_rect_1 = text_line_1.get_rect()
 
-    text_line_2 = font.render("RETURN for new game", True, (WHITE))
+    text_line_2 = large_font.render("RETURN for new game", True, (WHITE))
     text_rect_2 = text_line_2.get_rect()
 
     msg_bk_left = BLOCKSIZE * 2
@@ -447,7 +537,8 @@ if __name__ == '__main__':
     pygame.key.set_repeat(500, 200)
 
     clock = pygame.time.Clock()
-    font = pygame.font.SysFont("Helvetica", 24)
+    large_font = pygame.font.SysFont("Helvetica", 24)
+    score_font = pygame.font.SysFont("Helvetica Bold", 24)
 
     # Load images
     frog_lives_image = pygame.image.load("frog_lives.png")
