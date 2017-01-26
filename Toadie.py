@@ -313,6 +313,7 @@ def main():
     # Initialise objects
     frog = Frog()
     score = 0
+    hi_score = 0
     game_timer = Timer(FROGTIME)
 
     pavement_blocks = []
@@ -395,6 +396,18 @@ def main():
             elif key_pressed[pygame.K_DOWN]:
                 frog.move("D")
 
+            elif key_pressed[pygame.K_RETURN] and (frog.lives == 0 or frog.home_count == 5):
+                frog = Frog()
+                score = 0
+                game_timer = Timer(FROGTIME)
+
+                if new_hi_score > hi_score:
+                    hi_score = new_hi_score
+
+                landing_pads = []
+                for counter in range(5):
+                    landing_pad = Pad(counter * 3)
+                    landing_pads.append(landing_pad)
 
 
             if event.type == QUIT:
@@ -473,14 +486,14 @@ def main():
             frog.check_death_pause(game_timer)
 
         if frog.lives == 0:
-            game_over()
+            new_hi_score = check_hi_score(score, hi_score)
+            game_over(score, hi_score, new_hi_score)
 
         if frog.home_count == 5:
-            game_over()
+            new_hi_score = check_hi_score(score, hi_score)
+            game_over(score, hi_score, new_hi_score)
 
         score = score + frog.collect_points()
-
-
 
         pygame.display.update()
         clock.tick(30)
@@ -511,23 +524,43 @@ def display_scores(lives, score, time):
 
 
 
-def game_over():
+def game_over(score, hi_score, new_hi_score):
     text_line_1 = large_font.render("GAME OVER", True, (WHITE))
     text_rect_1 = text_line_1.get_rect()
 
-    text_line_2 = large_font.render("RETURN for new game", True, (WHITE))
+    score_text = "Score: " + str(score)
+    text_line_2 = large_font.render(score_text, True, (WHITE))
     text_rect_2 = text_line_2.get_rect()
 
+    hi_text = ""
+    if new_hi_score > hi_score:
+        hi_text = "[New high score]"
+
+    text_line_3 = large_font.render(hi_text, True, (WHITE))
+    text_rect_3 = text_line_3.get_rect()
+
+    text_line_4 = large_font.render("RETURN for new game", True, (WHITE))
+    text_rect_4 = text_line_4.get_rect()
+
     msg_bk_left = BLOCKSIZE * 2
-    msg_bk_top = BLOCKSIZE * 6
+    msg_bk_top = BLOCKSIZE * 5
     msg_bk_width = SCREENWIDTH - msg_bk_left * 2
     msg_bk_height = SCREENHEIGHT - msg_bk_top * 2
     msg_bk_rect = (msg_bk_left, msg_bk_top, msg_bk_width, msg_bk_height)
     pygame.draw.rect(game_screen, PURPLE, msg_bk_rect)
 
-    game_screen.blit(text_line_1, [(SCREENWIDTH - text_rect_1.width) / 2, msg_bk_top + BLOCKSIZE])
-    game_screen.blit(text_line_2, [(SCREENWIDTH - text_rect_2.width) / 2, msg_bk_top + msg_bk_height - 2 * BLOCKSIZE])
+    game_screen.blit(text_line_1, [(SCREENWIDTH - text_rect_1.width) / 2, msg_bk_top + BLOCKSIZE / 2])
+    game_screen.blit(text_line_2, [(SCREENWIDTH - text_rect_2.width) / 2, msg_bk_top + BLOCKSIZE * 2])
+    game_screen.blit(text_line_3, [(SCREENWIDTH - text_rect_3.width) / 2, msg_bk_top + BLOCKSIZE * 2 + BLOCKSIZE])
+    game_screen.blit(text_line_4, [(SCREENWIDTH - text_rect_4.width) / 2, msg_bk_top + msg_bk_height - BLOCKSIZE - BLOCKSIZE/2])
 
+
+def check_hi_score(score, hi_score):
+    new_hi_score = 0
+    if score > hi_score:
+        new_hi_score = score
+
+    return new_hi_score
 
 
 if __name__ == '__main__':
