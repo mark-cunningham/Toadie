@@ -41,26 +41,26 @@ TURTLELANE2 = 3
 LOGLANE3 = 2
 HOMELANE = 1
 
-FROGSTARTX = 6
-FROGSTARTY = PAVEMENTLANE1
-FROGDEATHTIME = 2
-FROGTIME = 45
+TOADSTARTX = 6
+TOADSTARTY = PAVEMENTLANE1
+TOADDEATHTIME = 2
+TOADTIME = 45
 
 
 # initialise variables
 screen_blocks_wide = int(SCREENWIDTH / BLOCKSIZE)
 
-# Frog class
-class Frog(object):
+# Toad class
+class Toad(object):
     def __init__(self):
-        self.image = pygame.image.load("frog.png")
-        self.dead_image = pygame.image.load("dead_frog.png")
+        self.image = pygame.image.load("toad.png").convert_alpha()
+        self.dead_image = pygame.image.load("dead_toad.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.padding_width = (BLOCKSIZE - self.image.get_width()) / 2
         self.padding_height = (BLOCKSIZE - self.image.get_height()) / 2
 
-        self.rect.x = FROGSTARTX * BLOCKSIZE + self.padding_width
-        self.rect.y = FROGSTARTY * BLOCKSIZE + self.padding_height
+        self.rect.x = TOADSTARTX * BLOCKSIZE + self.padding_width
+        self.rect.y = TOADSTARTY * BLOCKSIZE + self.padding_height
 
         self.lives = 3
         self.points = 0
@@ -105,27 +105,27 @@ class Frog(object):
                 self.die()
 
     def check_water(self, river_list):
-        frog_top = self.calc_frog_top()
-        if frog_top < PAVEMENTLANE2 * BLOCKSIZE and frog_top > HOMELANE * BLOCKSIZE:
-            floating_frog = False
+        toad_top = self.calc_toad_top()
+        if toad_top < PAVEMENTLANE2 * BLOCKSIZE and toad_top > HOMELANE * BLOCKSIZE:
+            floating_toad = False
             for river_item in river_list:
                 if self.rect.colliderect(river_item):
                     if self.rect.left > river_item.rect.left and self.rect.right < river_item.rect.right:
                         self.rect.x = self.rect.x + river_item.speed
-                        floating_frog = True
+                        floating_toad = True
 
-            if floating_frog is False:
+            if floating_toad is False:
                 self.die()
 
-            if floating_frog is True and self.rect.right >= SCREENWIDTH:
+            if floating_toad is True and self.rect.right >= SCREENWIDTH:
                 self.die()
 
-            if floating_frog is True and self.rect.left <= 0:
+            if floating_toad is True and self.rect.left <= 0:
                 self.die()
 
     def check_home(self, home_pads, game_timer):
-        frog_top = self.calc_frog_top()
-        if frog_top <= HOMELANE * BLOCKSIZE:
+        toad_top = self.calc_toad_top()
+        if toad_top <= HOMELANE * BLOCKSIZE:
             found_home = False
             for pad in home_pads:
                 if self.rect.centerx >= pad.rect.left and self.rect.centerx <= pad.rect.right:
@@ -141,8 +141,8 @@ class Frog(object):
                         secs_left = game_timer.get_seconds_left()
                         self.points = self.points + 10 * secs_left
 
-                        self.rect.x = FROGSTARTX * BLOCKSIZE + self.padding_width
-                        self.rect.y = FROGSTARTY * BLOCKSIZE + self.padding_height
+                        self.rect.x = TOADSTARTX * BLOCKSIZE + self.padding_width
+                        self.rect.y = TOADSTARTY * BLOCKSIZE + self.padding_height
 
                         self.furthest_forward = self.rect.y
                         game_timer.reset()
@@ -165,10 +165,10 @@ class Frog(object):
 
     def check_death_pause(self, game_timer):
         elapsed_time = pygame.time.get_ticks() - self.death_pause_timer
-        if elapsed_time > FROGDEATHTIME * 1000:
+        if elapsed_time > TOADDEATHTIME * 1000:
             self.alive = True
-            self.rect.x = FROGSTARTX * BLOCKSIZE + self.padding_width
-            self.rect.y = FROGSTARTY * BLOCKSIZE + self.padding_height
+            self.rect.x = TOADSTARTX * BLOCKSIZE + self.padding_width
+            self.rect.y = TOADSTARTY * BLOCKSIZE + self.padding_height
             self.furthest_forward = self.rect.y
             game_timer.reset()
 
@@ -179,7 +179,7 @@ class Frog(object):
 
         return collected_points
 
-    def calc_frog_top(self):
+    def calc_toad_top(self):
         return self.rect.y - self.padding_height
 
 
@@ -191,7 +191,7 @@ class Frog(object):
 class MovingObject(object):
 
     def __init__(self, speed, location, image):
-        self.image = pygame.image.load(image)
+        self.image = pygame.image.load(image).convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.x = location[0] * BLOCKSIZE
         self.rect.y = location[1] * BLOCKSIZE
@@ -250,7 +250,7 @@ class Pavement(object):
     def __init__(self, location):
         self.x = location[0]
         self.y = location[1]
-        self.image = pygame.image.load("pavement.png")
+        self.image = pygame.image.load("pavement.png").convert_alpha()
 
     def draw(self):
         self.rect = pygame.Rect(self.x * BLOCKSIZE, self.y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE)
@@ -260,8 +260,8 @@ class Pavement(object):
 class Pad(object):
     def __init__(self, x_coord):
         self.x = x_coord
-        self.image = pygame.image.load("pad.png")
-        self.occupied_image = pygame.image.load("occupied_pad.png")
+        self.image = pygame.image.load("pad.png").convert_alpha()
+        self.occupied_image = pygame.image.load("occupied_pad.png").convert_alpha()
         self.padding_width = (BLOCKSIZE - self.image.get_width()) / 2 + self.image.get_width()
         self.padding_height = (BLOCKSIZE - self.image.get_height()) / 2
         self.rect = pygame.Rect(self.x * BLOCKSIZE + self.padding_width, HOMELANE * BLOCKSIZE + self.padding_height,
@@ -311,10 +311,10 @@ class Timer(object):
 def main():
 
     # Initialise objects
-    frog = Frog()
+    toadie = Toad()
     score = 0
     hi_score = 0
-    game_timer = Timer(FROGTIME)
+    game_timer = Timer(TOADTIME)
 
     pavement_blocks = []
     for counter in range(screen_blocks_wide):
@@ -388,18 +388,18 @@ def main():
             key_pressed = pygame.key.get_pressed()
 
             if key_pressed[pygame.K_LEFT]:
-                frog.move("L")
+                toadie.move("L")
             elif key_pressed[pygame.K_RIGHT]:
-                frog.move("R")
+                toadie.move("R")
             elif key_pressed[pygame.K_UP]:
-                frog.move("U")
+                toadie.move("U")
             elif key_pressed[pygame.K_DOWN]:
-                frog.move("D")
+                toadie.move("D")
 
-            elif key_pressed[pygame.K_RETURN] and (frog.lives == 0 or frog.home_count == 5):
-                frog = Frog()
+            elif key_pressed[pygame.K_RETURN] and (toadie.lives == 0 or toadie.home_count == 5):
+                toadie = Toad()
                 score = 0
-                game_timer = Timer(FROGTIME)
+                game_timer = Timer(TOADTIME)
 
                 if new_hi_score > hi_score:
                     hi_score = new_hi_score
@@ -421,7 +421,7 @@ def main():
         pygame.draw.rect(game_screen, BLACK, (0, SCREENHEIGHT / 2, SCREENWIDTH, SCREENHEIGHT))
 
         # Load home
-        home_image = pygame.image.load("home.png").convert()
+        home_image = pygame.image.load("home.png").convert_alpha()
         game_screen.blit(home_image, [0, 0])
 
         for pavement in pavement_blocks:
@@ -451,7 +451,7 @@ def main():
         log_c2.move()
         log_c3.move()
 
-        frog.draw()
+        toadie.draw()
 
         car_a1.move()
         car_a2.move()
@@ -472,39 +472,39 @@ def main():
         truck_1.move()
         truck_2.move()
 
-        frog.check_collision(traffic)
-        frog.check_water(river)
-        frog.check_home(landing_pads, game_timer)
+        toadie.check_collision(traffic)
+        toadie.check_water(river)
+        toadie.check_home(landing_pads, game_timer)
 
         game_timer.update_time()
-        display_scores(frog.lives, score, game_timer.time_remaining)
+        display_scores(toadie.lives, score, game_timer.time_remaining)
 
         if game_timer.out_of_time() is True:
-            frog.die()
+            toadie.die()
 
-        if frog.alive is False and frog.lives > 0:
-            frog.check_death_pause(game_timer)
+        if toadie.alive is False and toadie.lives > 0:
+            toadie.check_death_pause(game_timer)
 
-        if frog.lives == 0:
+        if toadie.lives == 0:
             new_hi_score = check_hi_score(score, hi_score)
             game_over(score, hi_score, new_hi_score)
 
-        if frog.home_count == 5:
+        if toadie.home_count == 5:
             new_hi_score = check_hi_score(score, hi_score)
             game_over(score, hi_score, new_hi_score)
 
-        score = score + frog.collect_points()
+        score = score + toadie.collect_points()
 
         pygame.display.update()
         clock.tick(30)
 
 
 def display_scores(lives, score, time):
-    padding = (BLOCKSIZE - frog_lives_image.get_height()) / 2
-    width = frog_lives_image.get_width()
+    padding = (BLOCKSIZE - toad_lives_image.get_height()) / 2
+    width = toad_lives_image.get_width()
     space = 4
     for life_number in range(lives):
-        game_screen.blit(frog_lives_image, [life_number * (width + space) + padding, LIVESLANE * BLOCKSIZE + padding])
+        game_screen.blit(toad_lives_image, [life_number * (width + space) + padding, LIVESLANE * BLOCKSIZE + padding])
 
     score_text = "SCORE   " + str(score)
     text = score_font.render(score_text, True, (WHITE))
@@ -574,6 +574,6 @@ if __name__ == '__main__':
     score_font = pygame.font.SysFont("Helvetica Bold", 24)
 
     # Load images
-    frog_lives_image = pygame.image.load("frog_lives.png")
+    toad_lives_image = pygame.image.load("toad_lives.png").convert_alpha()
 
     main()
